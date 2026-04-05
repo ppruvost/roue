@@ -85,7 +85,12 @@ img.src=`puzzle_${labels[i]}.png`;
 img.className="puzzle";
 c.appendChild(img);
 
-c.innerHTML+=data[k].map(e=>`<div>${e}</div>`).join("");
+c.innerHTML += data[k].map(e => `
+  <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
+    <img src="puzzle_${labels[i]}.png" class="puzzle">
+    <span>${e}</span>
+  </div>
+`).join("");
 div.appendChild(c);
 });}
 
