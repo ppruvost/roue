@@ -39,7 +39,7 @@ let eleves=[];
 let segments=[];
 
 // 🎨 couleurs cohérentes avec puzzles
-const couleurs=["#ff3b30","#34c759","#007aff","#ff9500","af52de"];
+const couleurs=["#ff3b30","#34c759","#007aff","#ff9500","#af52de"];
 const nomsCouleurs=["Rouge","Vert","Bleu","Orange","Violet"];
 
 let startAngle=0,arc=0;
@@ -104,12 +104,31 @@ audio.play();
 
 (function anim(){
 
+function spin(){
+
+if(eleves.length===0)return alert("Charge fichier");
+
+// reset attribution (important)
+attribution=[];
+
+// vitesse initiale
+let vitesse = Math.random()*0.3 + 0.4;
+
+// durée 9 secondes
+let duree = 9000;
+let start = Date.now();
+
+// 🔊 son
+let audio = new Audio("roulette.mp3");
+audio.loop = true;
+audio.play();
+
+(function anim(){
+
 let elapsed = Date.now() - start;
 
-// ralentissement progressif (effet physique)
-let ralentissement = 0.995;
-
-vitesse *= ralentissement;
+// ralentissement
+vitesse *= 0.995;
 
 startAngle += vitesse;
 
@@ -118,17 +137,19 @@ drawWheel();
 if(elapsed < duree){
 requestAnimationFrame(anim);
 }else{
+
 audio.pause();
 audio.currentTime = 0;
 
-// tirage UNIQUE
+// ✅ tirage terminé ICI
 tirageUnique();
+
+// ✅ message AU BON MOMENT
+alert("Tirage effectué ! Tu peux lancer les séances.");
 
 }
 
 })();
-
-alert("Tirage effectué ! Tu peux lancer les séances.");
 }
 
 // 🔀 mélange
