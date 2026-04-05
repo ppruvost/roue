@@ -38,13 +38,13 @@ const ctx=document.getElementById("wheel").getContext("2d");
 let eleves=[];
 let segments=[];
 
-// 🎨 couleurs cohérentes avec puzzles
+// 🎨 couleurs
 const couleurs=["#ff3b30","#34c759","#007aff","#ff9500","#af52de"];
 const nomsCouleurs=["Rouge","Vert","Bleu","Orange","Violet"];
 
 let startAngle=0,arc=0;
 
-// 🧠 stockage du tirage UNIQUE
+// stockage du tirage
 let attribution=[];
 
 // 🎡 roue
@@ -85,40 +85,22 @@ ctx.lineTo(200,40);
 ctx.fill();
 }
 
-// 🎡 SPIN = tirage UNIQUE
+// 🎡 SPIN
 function spin(){
 
 if(eleves.length===0)return alert("Charge fichier");
 
-// vitesse initiale
-let vitesse = Math.random()*0.3 + 0.4;
-
-// durée 9 secondes
-let duree = 9000;
-let start = Date.now();
-
-// 🔊 son
-let audio = new Audio("roulette.mp3");
-audio.loop = true;
-audio.play();
-
-(function anim(){
-
-function spin(){
-
-if(eleves.length===0)return alert("Charge fichier");
-
-// reset attribution (important)
+// reset attribution
 attribution=[];
 
 // vitesse initiale
 let vitesse = Math.random()*0.3 + 0.4;
 
-// durée 9 secondes
+// durée
 let duree = 9000;
 let start = Date.now();
 
-// 🔊 son
+// son
 let audio = new Audio("roulette.mp3");
 audio.loop = true;
 audio.play();
@@ -129,7 +111,6 @@ let elapsed = Date.now() - start;
 
 // ralentissement
 vitesse *= 0.995;
-
 startAngle += vitesse;
 
 drawWheel();
@@ -141,15 +122,28 @@ requestAnimationFrame(anim);
 audio.pause();
 audio.currentTime = 0;
 
-// ✅ tirage terminé ICI
+// tirage final
 tirageUnique();
 
-// ✅ message AU BON MOMENT
 alert("Tirage effectué ! Tu peux lancer les séances.");
 
 }
 
 })();
+
+}
+
+// 🎯 tirage UNIQUE
+function tirageUnique(){
+
+let mel = shuffle([...eleves]);
+
+attribution = mel.map((nom, i)=>({
+nom: nom,
+couleur: nomsCouleurs[i%5],
+numero: (i%5)+1
+}));
+
 }
 
 // 🔀 mélange
@@ -189,7 +183,7 @@ groupes[e.couleur].push(e);
 afficher(groupes);
 }
 
-// 🔤 séance 2 (NOUVEAU mélange MAIS conserve couleur+numéro)
+// 🔤 séance 2
 function tirageLettres(){
 
 if(attribution.length===0)return alert("Fais d'abord tourner la roue");
@@ -206,7 +200,7 @@ groupes[lettres[i%5]].push(e);
 afficher(groupes);
 }
 
-// 🖼️ affichage commun
+// 🖼️ affichage
 function afficher(groupes){
 
 let div=document.getElementById("results");
