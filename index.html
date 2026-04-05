@@ -39,7 +39,7 @@ let eleves=[];
 let segments=[];
 
 // 🎨 couleurs cohérentes avec puzzles
-const couleurs=["#e74c3c","#27ae60","#2980b9","#e67e22","#9b59b6"];
+const couleurs=["#ff3b30","#34c759","#007aff","#ff9500","af52de"];
 const nomsCouleurs=["Rouge","Vert","Bleu","Orange","Violet"];
 
 let startAngle=0,arc=0;
@@ -90,28 +90,43 @@ function spin(){
 
 if(eleves.length===0)return alert("Charge fichier");
 
-let mel=shuffle([...eleves]);
+// vitesse initiale
+let vitesse = Math.random()*0.3 + 0.4;
 
-attribution=[];
+// durée 9 secondes
+let duree = 9000;
+let start = Date.now();
 
-// 🎯 attribution fixe
-mel.forEach((e,i)=>{
+// 🔊 son
+let audio = new Audio("roulette.mp3");
+audio.loop = true;
+audio.play();
 
-let couleur=nomsCouleurs[i%5];
+(function anim(){
 
-let numero=Math.floor(i/5)+1;
-if(numero>4) numero=((numero-1)%4)+1;
+let elapsed = Date.now() - start;
 
-attribution.push({
-nom:e,
-couleur:couleur,
-numero:numero
-});
+// ralentissement progressif (effet physique)
+let ralentissement = 0.995;
 
-});
+vitesse *= ralentissement;
 
-segments=[...mel];
+startAngle += vitesse;
+
 drawWheel();
+
+if(elapsed < duree){
+requestAnimationFrame(anim);
+}else{
+audio.pause();
+audio.currentTime = 0;
+
+// tirage UNIQUE
+tirageUnique();
+
+}
+
+})();
 
 alert("Tirage effectué ! Tu peux lancer les séances.");
 }
