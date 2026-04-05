@@ -138,11 +138,27 @@ function tirageUnique(){
 
 let mel = shuffle([...eleves]);
 
-attribution = mel.map((nom, i)=>({
+let compteurs = {
+Rouge:0,
+Vert:0,
+Bleu:0,
+Orange:0,
+Violet:0
+};
+
+attribution = mel.map((nom, i)=>{
+
+let couleur = nomsCouleurs[i%5];
+
+compteurs[couleur]++;
+
+return {
 nom: nom,
-couleur: nomsCouleurs[i%5],
-numero: (i%5)+1
-}));
+couleur: couleur,
+numero: compteurs[couleur]
+};
+
+});
 
 }
 
@@ -188,13 +204,23 @@ function tirageLettres(){
 
 if(attribution.length===0)return alert("Fais d'abord tourner la roue");
 
-let mel=shuffle([...attribution]);
-
 let lettres=["A","B","C","D","E"];
 let groupes={A:[],B:[],C:[],D:[],E:[]};
 
-mel.forEach((e,i)=>{
-groupes[lettres[i%5]].push(e);
+// 🔑 regrouper par NUMÉRO
+attribution.forEach(e=>{
+
+let index = e.numero - 1;
+
+if(index < lettres.length){
+groupes[lettres[index]].push(e);
+}
+
+});
+
+// 🔀 mélanger à l'intérieur de chaque groupe
+Object.keys(groupes).forEach(g=>{
+groupes[g] = shuffle(groupes[g]);
 });
 
 afficher(groupes);
