@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <title>Roue de la Classe Puzzle</title>
+
 <style>
 body{font-family:Arial;text-align:center;background:#f5f5f5}
 canvas{margin-top:20px;border:2px solid #000}
-select,button,input{margin:5px;padding:10px}
+button,input{margin:5px;padding:10px}
 .results{display:flex;flex-wrap:wrap;justify-content:center}
-.card{border:2px solid #000;margin:10px;padding:10px;width:150px;border-radius:8px;background:#fff}
-.puzzle{width:80px;margin:5px}
+.card{border:2px solid #000;margin:10px;padding:10px;width:170px;border-radius:8px;background:#fff}
+.puzzle{width:50px}
 </style>
+
 </head>
 <body>
 
@@ -24,92 +26,234 @@ select,button,input{margin:5px;padding:10px}
 <button onclick="tirageLettres()">Séance 2 : Lettres</button>
 
 <canvas id="wheel" width="400" height="400"></canvas>
+<br>
 <button onclick="spin()">Tourner</button>
+
+<div id="resultatFinal" style="font-size:20px;margin-top:20px;"></div>
+<img id="imageFinale" style="width:80px;margin-top:10px;">
 
 <div id="results" class="results"></div>
 
 <script>
+
 const ctx=document.getElementById("wheel").getContext("2d");
-let eleves=[];let segments=[];
 
-const couleurs=["#e74c3c","#27ae60","#2980b9","#f1c40f","#9b59b6"];
-const nomsCouleurs=["Rouge","Vert","Bleu","Jaune","Violet"];
-const lettres=["A","B","C","D", "E"];
+let eleves=[];
+let segments=[];
 
-let startAngle=0,arc=0;
+const couleurs=["#e74c3c","#27ae60","#2980b9","#e67e22","#9b59b6"];
+const nomsCouleurs=["Rouge","Vert","Bleu","Orange","Violet"];
+const lettres=["A","B","C","D","E"];
 
+let startAngle=0;
+let arc=0;
+
+// 🎡 Dessin roue
 function drawWheel(){
 ctx.clearRect(0,0,400,400);
-if(segments.length===0){ctx.fillText("Charge fichier",130,200);return;}
+
+if(segments.length===0){
+ctx.fillText("Charge fichier",130,200);
+return;
+}
+
 arc=Math.PI*2/segments.length;
+
 segments.forEach((s,i)=>{
 let angle=startAngle+i*arc;
+
 ctx.beginPath();
-ctx.fillStyle=couleurs[i%couleurs.length];
+ctx.fillStyle=couleurs[i%5];
 ctx.moveTo(200,200);
 ctx.arc(200,200,200,angle,angle+arc);
 ctx.fill();
-ctx.save();ctx.translate(200,200);
-ctx.rotate(angle+arc/2);
-ctx.fillStyle="#000";ctx.textAlign="right";
-ctx.fillText(s,180,10);ctx.restore();});
-ctx.fillStyle="#000";
-ctx.beginPath();ctx.moveTo(190,10);ctx.lineTo(210,10);ctx.lineTo(200,40);ctx.fill();}
 
+ctx.save();
+ctx.translate(200,200);
+ctx.rotate(angle+arc/2);
+ctx.fillStyle="#000";
+ctx.textAlign="right";
+ctx.fillText(s,180,10);
+ctx.restore();
+});
+
+// flèche
+ctx.fillStyle="#000";
+ctx.beginPath();
+ctx.moveTo(190,10);
+ctx.lineTo(210,10);
+ctx.lineTo(200,40);
+ctx.fill();
+}
+
+// 🎡 Rotation
 function spin(){
 if(segments.length===0)return alert("Charge fichier");
-let t=Date.now(),dur=3000;
-(function anim(){startAngle+=0.3;drawWheel();if(Date.now()-t<dur)requestAnimationFrame(anim);})();}
 
+let t=Date.now();
+let dur=3000;
+
+(function anim(){
+startAngle+=0.3;
+drawWheel();
+
+if(Date.now()-t<dur){
+requestAnimationFrame(anim);
+}else{
+calculResultat();
+}
+
+})();
+}
+
+// 🎯 Résultat roue
+function calculResultat(){
+
+let index = Math.floor((2*Math.PI - startAngle % (2*Math.PI)) / arc) % segments.length;
+
+let eleve = segments[index];
+
+let couleur = nomsCouleurs[index % 5];
+
+let numero = Math.floor(index/5)+1;
+if(numero>4) numero=((numero-1)%4)+1;
+
+document.getElementById("resultatFinal").innerHTML =
+`${eleve} → ${couleur} ${numero}`;
+
+document.getElementById("imageFinale").src =
+`puzzle_${numero}_${couleur}.png`;
+}
+
+// 📂 Charger fichier
 function loadFromFile(){
 let file=document.getElementById("fileInput").files[0];
 if(!file)return alert("Choisir fichier");
+
 let r=new FileReader();
+
 r.onload=e=>{
 eleves=e.target.result.split("\n").map(x=>x.trim()).filter(x=>x);
-segments=[...eleves];drawWheel();};
+segments=[...eleves];
+drawWheel();
+};
+
 r.readAsText(file);
 }
 
-function shuffle(a){for(let i=a.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+// 🔀 Mélange
+function shuffle(a){
+for(let i=a.length-1;i>0;i--){
+let j=Math.floor(Math.random()*(i+1));
+[a[i],a[j]]=[a[j],a[i]];
+}
+return a;
+}
 
-function display(data,labels,type){
-let div=document.getElementById("results");div.innerHTML="";
-Object.keys(data).forEach((k,i)=>{
-let c=document.createElement("div");c.className="card";
-c.innerHTML=`<h4>${labels[i]}</h4>`;
+// 🎨 Affichage groupes couleurs
+function displayCouleurs(groupes){
 
-// ajout logo puzzle
+let div=document.getElementById("results");
+div.innerHTML="";
+
+Object.keys(groupes).forEach(couleur=>{
+
+let c=document.createElement("div");
+c.className="card";
+c.innerHTML=`<h4>${couleur}</h4>`;
+
+groupes[couleur].forEach(eleve=>{
+
+let ligne=document.createElement("div");
+ligne.style.display="flex";
+ligne.style.alignItems="center";
+ligne.style.gap="5px";
+
 let img=document.createElement("img");
-img.src=`puzzle_${labels[i]}.png`;
+img.src=`puzzle_${eleve.numero}_${eleve.couleur}.png`;
 img.className="puzzle";
-c.appendChild(img);
 
-c.innerHTML += data[k].map(e => `
-  <div style="display:flex;align-items:center;justify-content:center;gap:5px;">
-    <img src="puzzle_${labels[i]}.png" class="puzzle">
-    <span>${e}</span>
-  </div>
-`).join("");
+let span=document.createElement("span");
+span.textContent=eleve.nom;
+
+ligne.appendChild(img);
+ligne.appendChild(span);
+
+c.appendChild(ligne);
+
+});
+
 div.appendChild(c);
-});}
 
-// adaptable nombre élèves
+});
+}
+
+// 🎯 Tirage couleurs
 function tirageCouleurs(){
-if(eleves.length===0)return alert("Charge fichier");
-let mel=shuffle([...eleves]);
-let groupes={0:[],1:[],2:[],3:[],4:[]};
-mel.forEach((e,i)=>{groupes[i%5].push(e)});
-display(groupes,nomsCouleurs,"couleur");}
 
-function tirageLettres(){
 if(eleves.length===0)return alert("Charge fichier");
+
 let mel=shuffle([...eleves]);
+
+let groupes={
+Rouge:[],Vert:[],Bleu:[],Orange:[],Violet:[]
+};
+
+mel.forEach((e,i)=>{
+
+let couleur=nomsCouleurs[i%5];
+
+let numero=Math.floor(i/5)+1;
+if(numero>4) numero=((numero-1)%4)+1;
+
+groupes[couleur].push({
+nom:e,
+numero:numero,
+couleur:couleur
+});
+
+});
+
+displayCouleurs(groupes);
+}
+
+// 🔤 Tirage lettres
+function tirageLettres(){
+
+if(eleves.length===0)return alert("Charge fichier");
+
+let mel=shuffle([...eleves]);
+
 let groupes={A:[],B:[],C:[],D:[],E:[]};
-mel.forEach((e,i)=>{groupes[lettres[i%5]].push(e)});
-display(groupes,lettres,"lettre");}
+
+mel.forEach((e,i)=>{
+groupes[lettres[i%5]].push(e);
+});
+
+let div=document.getElementById("results");
+div.innerHTML="";
+
+Object.keys(groupes).forEach(l=>{
+
+let c=document.createElement("div");
+c.className="card";
+c.innerHTML=`<h4>${l}</h4>`;
+
+groupes[l].forEach(e=>{
+c.innerHTML+=`
+<div style="display:flex;align-items:center;gap:5px;">
+<img src="puzzle_${l}.png" class="puzzle">
+<span>${e}</span>
+</div>`;
+});
+
+div.appendChild(c);
+
+});
+}
 
 drawWheel();
+
 </script>
 
 </body>
