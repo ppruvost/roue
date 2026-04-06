@@ -9,8 +9,8 @@ body{font-family:Arial;text-align:center;background:#f5f5f5}
 canvas{margin-top:20px;border:2px solid #000}
 button,input{margin:5px;padding:10px}
 .results{display:flex;flex-wrap:wrap;justify-content:center}
-.card{border:2px solid #000;margin:10px;padding:10px;width:170px;border-radius:8px;background:#fff}
-.puzzle{width:50px}
+.card{border:2px solid #000;margin:10px;padding:10px;width:200px;border-radius:8px;background:#fff}
+.puzzle{width:40px}
 </style>
 </head>
 
@@ -22,12 +22,12 @@ button,input{margin:5px;padding:10px}
 <button onclick="loadFromFile()">Charger fichier</button>
 
 <br>
-<button onclick="tirageLettres()">Séance 1 : Chiffres</button>
-<button onclick="tirageCouleurs()">Séance 2 : Couleurs</button>
+<button onclick="tirageSeance1()">Séance 1 : Groupes 01 à 05</button>
+<button onclick="tirageSeance2()">Séance 2 : Groupes Couleurs</button>
 
 <canvas id="wheel" width="400" height="400"></canvas>
 <br>
-<button onclick="spin()">Tourner (tirage unique)</button>
+<button onclick="spin()">Tourner</button>
 
 <div id="results" class="results"></div>
 
@@ -38,14 +38,21 @@ const ctx=document.getElementById("wheel").getContext("2d");
 let eleves=[];
 let segments=[];
 
-// 🎨 couleurs
+// couleurs
 const couleurs=["#FF0000","#34c759","#007aff","#ff9500","#af52de"];
 const nomsCouleurs=["Rouge","Vert","Bleu","Orange","Violet"];
 
 let startAngle=0,arc=0;
-
-// stockage du tirage
 let attribution=[];
+
+// rôles séance 1
+const roles = {
+1:{nom:"Espion", img:"espion.png"},
+2:{nom:"Rapporteur", img:"rapporteur.png"},
+3:{nom:"Calculateur", img:"calculateur.png"},
+4:{nom:"Stratège", img:"stratege.png"},
+5:{nom:"Médiateur", img:"mediateur.png"}
+};
 
 // 🎡 roue
 function drawWheel(){
@@ -87,69 +94,36 @@ ctx.fill();
 
 // 🎡 SPIN
 function spin(){
-
 if(eleves.length===0)return alert("Charge fichier");
 
-// reset attribution
-attribution=[];
-
-// vitesse initiale
 let vitesse = Math.random()*0.3 + 0.4;
-
-// durée
-let duree = 9000;
+let duree = 5000;
 let start = Date.now();
 
-// son
-let audio = new Audio("roulette.mp3");
-audio.loop = true;
-audio.play();
-
 (function anim(){
-
 let elapsed = Date.now() - start;
-
-// ralentissement
 vitesse *= 0.995;
 startAngle += vitesse;
-
 drawWheel();
 
 if(elapsed < duree){
 requestAnimationFrame(anim);
 }else{
-
-audio.pause();
-audio.currentTime = 0;
-
-// tirage final
 tirageUnique();
-
-alert("Tirage effectué ! Tu peux lancer les séances.");
-
+alert("Tirage effectué !");
 }
-
 })();
-
 }
 
-// 🎯 tirage UNIQUE
+// 🎯 attribution unique
 function tirageUnique(){
 
 let mel = shuffle([...eleves]);
 
-let compteurs = {
-Rouge:0,
-Vert:0,
-Bleu:0,
-Orange:0,
-Violet:0
-};
+let compteurs = {Rouge:0,Vert:0,Bleu:0,Orange:0,Violet:0};
 
 attribution = mel.map((nom, i)=>{
-
 let couleur = nomsCouleurs[i%5];
-
 compteurs[couleur]++;
 
 return {
@@ -157,7 +131,6 @@ nom: nom,
 couleur: couleur,
 numero: compteurs[couleur]
 };
-
 });
 
 }
@@ -185,27 +158,32 @@ drawWheel();
 r.readAsText(file);
 }
 
-// 🔤 séance 1
-function tirageLettres(){
+// =======================
+// 🧩 SÉANCE 1 (groupes 01 à 05)
+// =======================
+function tirageSeance1(){
 
-if(attribution.length===0)return alert("Fais d'abord tourner la roue");
+if(attribution.length===0)return alert("Tourne la roue d'abord");
 
-let lettres=["01","02","03","04","05"];
-let groupes={01:[],01:[],03:[],04:[],05:[]};
+let groupes={"01":[],"02":[],"03":[],"04":[],"05":[]};
 
-// 🔑 regrouper par NUMÉRO
 attribution.forEach(e=>{
+let num = e.numero;
+if(num<=5){
+groupes["0"+num].push(e);
+}
+});
 
-let index = e.numero - 1;
-
-if(index < lettres.length){
-groupes[lettres[index]].push(e);
+// affichage avec rôles
+afficher(groupes, "seance1");
 }
 
-// 🎨 séance 2
-function tirageCouleurs(){
+// =======================
+// 🎨 SÉANCE 2 (couleurs)
+// =======================
+function tirageSeance2(){
 
-if(attribution.length===0)return alert("Fais d'abord tourner la roue");
+if(attribution.length===0)return alert("Tourne la roue d'abord");
 
 let groupes={Rouge:[],Vert:[],Bleu:[],Orange:[],Violet:[]};
 
@@ -213,20 +191,13 @@ attribution.forEach(e=>{
 groupes[e.couleur].push(e);
 });
 
-afficher(groupes);
-}
-});
-
-// 🔀 mélanger à l'intérieur de chaque groupe
-Object.keys(groupes).forEach(g=>{
-groupes[g] = shuffle(groupes[g]);
-});
-
-afficher(groupes);
+afficher(groupes, "seance2");
 }
 
+// =======================
 // 🖼️ affichage
-function afficher(groupes){
+// =======================
+function afficher(groupes, mode){
 
 let div=document.getElementById("results");
 div.innerHTML="";
@@ -235,16 +206,26 @@ Object.keys(groupes).forEach(g=>{
 
 let c=document.createElement("div");
 c.className="card";
-c.innerHTML=`<h4>${g}</h4>`;
+c.innerHTML=`<h4>Groupe ${g}</h4>`;
 
 groupes[g].forEach(e=>{
 
+let roleHTML="";
+
+if(mode==="seance1"){
+let role = roles[e.numero];
+roleHTML = `<img src="${role.img}" class="puzzle"> ${role.nom}`;
+}
+
+if(mode==="seance2"){
+roleHTML = `<img src="expert.png" class="puzzle"> Expert`;
+}
+
 c.innerHTML+=`
-<div style="display:flex;align-items:center;gap:5px;">
-<img src="puzzle_${e.numero}_${e.couleur}.png" class="puzzle">
+<div style="display:flex;align-items:center;gap:5px;margin:5px 0;">
+${roleHTML}
 <span>${e.nom}</span>
 </div>`;
-
 });
 
 div.appendChild(c);
