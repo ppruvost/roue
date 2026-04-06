@@ -9,7 +9,7 @@ body{font-family:Arial;text-align:center;background:#f5f5f5}
 canvas{margin-top:20px;border:2px solid #000}
 button,input{margin:5px;padding:10px}
 .results{display:flex;flex-wrap:wrap;justify-content:center}
-.card{border:2px solid #000;margin:10px;padding:10px;width:200px;border-radius:8px;background:#fff}
+.card{border:2px solid #000;margin:10px;padding:10px;width:230px;border-radius:8px;background:#fff}
 .puzzle{width:40px}
 </style>
 </head>
@@ -22,8 +22,8 @@ button,input{margin:5px;padding:10px}
 <button onclick="loadFromFile()">Charger fichier</button>
 
 <br>
-<button onclick="tirageSeance1()">Séance 1 : Groupes 01 à 05</button>
-<button onclick="tirageSeance2()">Séance 2 : Groupes Couleurs</button>
+<button onclick="tirageSeance1()">Séance 1 : 4 groupes</button>
+<button onclick="tirageSeance2()">Séance 2 : Groupes couleurs</button>
 
 <canvas id="wheel" width="400" height="400"></canvas>
 <br>
@@ -37,22 +37,22 @@ const ctx=document.getElementById("wheel").getContext("2d");
 
 let eleves=[];
 let segments=[];
-
-// couleurs
-const couleurs=["#FF0000","#34c759","#007aff","#ff9500","#af52de"];
-const nomsCouleurs=["Rouge","Vert","Bleu","Orange","Violet"];
-
-let startAngle=0,arc=0;
 let attribution=[];
 
-// rôles séance 1
-const roles = {
-1:{nom:"Espion", img:"espion.png"},
-2:{nom:"Rapporteur", img:"rapporteur.png"},
-3:{nom:"Calculateur", img:"calculateur.png"},
-4:{nom:"Stratège", img:"stratege.png"},
-5:{nom:"Médiateur", img:"mediateur.png"}
-};
+let startAngle=0,arc=0;
+
+// rôles séance 1 (ordre dans groupe)
+const roles = [
+{nom:"Espion", img:"espion.png"},
+{nom:"Rapporteur", img:"rapporteur.png"},
+{nom:"Calculateur", img:"calculateur.png"},
+{nom:"Stratège", img:"stratege.png"},
+{nom:"Médiateur", img:"mediateur.png"}
+];
+
+// couleurs séance 2
+const couleurs = ["Rouge","Vert","Bleu","Orange","Violet"];
+
 
 // 🎡 roue
 function drawWheel(){
@@ -69,7 +69,7 @@ segments.forEach((s,i)=>{
 let angle=startAngle+i*arc;
 
 ctx.beginPath();
-ctx.fillStyle=couleurs[i%5];
+ctx.fillStyle="#ddd";
 ctx.moveTo(200,200);
 ctx.arc(200,200,200,angle,angle+arc);
 ctx.fill();
@@ -92,12 +92,13 @@ ctx.lineTo(200,40);
 ctx.fill();
 }
 
+
 // 🎡 SPIN
 function spin(){
 if(eleves.length===0)return alert("Charge fichier");
 
 let vitesse = Math.random()*0.3 + 0.4;
-let duree = 5000;
+let duree = 4000;
 let start = Date.now();
 
 (function anim(){
@@ -115,27 +116,8 @@ alert("Tirage effectué !");
 })();
 }
 
-// 🎯 attribution unique
-function tirageUnique(){
 
-let mel = shuffle([...eleves]);
-
-let compteurs = {Rouge:0,Vert:0,Bleu:0,Orange:0,Violet:0};
-
-attribution = mel.map((nom, i)=>{
-let couleur = nomsCouleurs[i%5];
-compteurs[couleur]++;
-
-return {
-nom: nom,
-couleur: couleur,
-numero: compteurs[couleur]
-};
-});
-
-}
-
-// 🔀 mélange
+// 🔀 mélange UNIQUE (base des 2 séances)
 function shuffle(a){
 for(let i=a.length-1;i>0;i--){
 let j=Math.floor(Math.random()*(i+1));
@@ -143,6 +125,11 @@ let j=Math.floor(Math.random()*(i+1));
 }
 return a;
 }
+
+function tirageUnique(){
+attribution = shuffle([...eleves]);
+}
+
 
 // 📂 fichier
 function loadFromFile(){
@@ -152,52 +139,93 @@ if(!file)return alert("Choisir fichier");
 let r=new FileReader();
 r.onload=e=>{
 eleves=e.target.result.split("\n").map(x=>x.trim()).filter(x=>x);
+
+// limiter à 20 élèves
+if(eleves.length > 20){
+alert("Maximum 20 élèves (4 groupes de 5)");
+eleves = eleves.slice(0,20);
+}
+
 segments=[...eleves];
 drawWheel();
 };
 r.readAsText(file);
 }
 
+
 // =======================
-// 🧩 SÉANCE 1 (groupes 01 à 05)
+// 🧩 SÉANCE 1 (4 groupes de 5)
 // =======================
 function tirageSeance1(){
 
 if(attribution.length===0)return alert("Tourne la roue d'abord");
 
-let groupes={"01":[],"02":[],"03":[],"04":[],"05":[]};
+let groupes={
+"01":[],
+"02":[],
+"03":[],
+"04":[]
+};
 
-attribution.forEach(e=>{
-let num = e.numero;
-if(num<=5){
-groupes["0"+num].push(e);
-}
+attribution.forEach((nom, index)=>{
+
+let groupeIndex = Math.floor(index/5); // 0 à 3
+
+if(groupeIndex < 4){
+
+let roleIndex = index % 5;
+
+groupes["0"+(groupeIndex+1)].push({
+nom: nom,
+role: roles[roleIndex]
 });
 
-// affichage avec rôles
-afficher(groupes, "seance1");
 }
 
+});
+
+afficherSeance1(groupes);
+}
+
+
 // =======================
-// 🎨 SÉANCE 2 (couleurs)
+// 🎨 SÉANCE 2 (5 groupes de 4)
 // =======================
 function tirageSeance2(){
 
 if(attribution.length===0)return alert("Tourne la roue d'abord");
 
-let groupes={Rouge:[],Vert:[],Bleu:[],Orange:[],Violet:[]};
+let groupes={
+"Rouge":[],
+"Vert":[],
+"Bleu":[],
+"Orange":[],
+"Violet":[]
+};
 
-attribution.forEach(e=>{
-groupes[e.couleur].push(e);
+// même ordre, nouvelle organisation
+attribution.forEach((nom, index)=>{
+
+let couleurIndex = index % 5;
+let couleur = couleurs[couleurIndex];
+
+// max 4 élèves par groupe
+if(groupes[couleur].length < 4){
+groupes[couleur].push({
+nom: nom
 });
-
-afficher(groupes, "seance2");
 }
 
+});
+
+afficherSeance2(groupes);
+}
+
+
 // =======================
-// 🖼️ affichage
+// 🖼️ affichage séance 1
 // =======================
-function afficher(groupes, mode){
+function afficherSeance1(groupes){
 
 let div=document.getElementById("results");
 div.innerHTML="";
@@ -210,28 +238,51 @@ c.innerHTML=`<h4>Groupe ${g}</h4>`;
 
 groupes[g].forEach(e=>{
 
-let roleHTML="";
-
-if(mode==="seance1"){
-let role = roles[e.numero];
-roleHTML = `<img src="${role.img}" class="puzzle"> ${role.nom}`;
-}
-
-if(mode==="seance2"){
-roleHTML = `<img src="expert.png" class="puzzle"> Expert`;
-}
-
 c.innerHTML+=`
-<div style="display:flex;align-items:center;gap:5px;margin:5px 0;">
-${roleHTML}
-<span>${e.nom}</span>
+<div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+<img src="${e.role.img}" class="puzzle">
+<strong>${e.role.nom}</strong>
+<span>- ${e.nom}</span>
 </div>`;
+
 });
 
 div.appendChild(c);
 
 });
 }
+
+
+// =======================
+// 🖼️ affichage séance 2
+// =======================
+function afficherSeance2(groupes){
+
+let div=document.getElementById("results");
+div.innerHTML="";
+
+Object.keys(groupes).forEach(g=>{
+
+let c=document.createElement("div");
+c.className="card";
+c.innerHTML=`<h4>Groupe ${g}</h4>`;
+
+groupes[g].forEach(e=>{
+
+c.innerHTML+=`
+<div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+<img src="expert.png" class="puzzle">
+<strong>Expert</strong>
+<span>- ${e.nom}</span>
+</div>`;
+
+});
+
+div.appendChild(c);
+
+});
+}
+
 
 drawWheel();
 
