@@ -22,8 +22,8 @@ button,input{margin:5px;padding:10px}
 <button onclick="loadFromFile()">Charger fichier</button>
 
 <br>
-<button onclick="tirageCouleurs()">Séance 1 : Couleurs</button>
-<button onclick="tirageLettres()">Séance 2 : Lettres</button>
+<button onclick="tirageLettres()">Séance 1 : Chiffres</button>
+<button onclick="tirageCouleurs()">Séance 2 : Couleurs</button>
 
 <canvas id="wheel" width="400" height="400"></canvas>
 <br>
@@ -185,7 +185,24 @@ drawWheel();
 r.readAsText(file);
 }
 
-// 🎨 séance 1
+// 🔤 séance 1
+function tirageLettres(){
+
+if(attribution.length===0)return alert("Fais d'abord tourner la roue");
+
+let lettres=["01","02","03","04","05"];
+let groupes={01:[],01:[],03:[],04:[],05:[]};
+
+// 🔑 regrouper par NUMÉRO
+attribution.forEach(e=>{
+
+let index = e.numero - 1;
+
+if(index < lettres.length){
+groupes[lettres[index]].push(e);
+}
+
+// 🎨 séance 2
 function tirageCouleurs(){
 
 if(attribution.length===0)return alert("Fais d'abord tourner la roue");
@@ -198,24 +215,6 @@ groupes[e.couleur].push(e);
 
 afficher(groupes);
 }
-
-// 🔤 séance 2
-function tirageLettres(){
-
-if(attribution.length===0)return alert("Fais d'abord tourner la roue");
-
-let lettres=["A","B","C","D","E"];
-let groupes={A:[],B:[],C:[],D:[],E:[]};
-
-// 🔑 regrouper par NUMÉRO
-attribution.forEach(e=>{
-
-let index = e.numero - 1;
-
-if(index < lettres.length){
-groupes[lettres[index]].push(e);
-}
-
 });
 
 // 🔀 mélanger à l'intérieur de chaque groupe
