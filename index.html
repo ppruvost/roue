@@ -22,7 +22,7 @@ button,input{margin:5px;padding:10px}
 <button onclick="loadFromFile()">Charger fichier</button>
 
 <br>
-<button onclick="tirageSeance1()">Séance 1 : 4 groupes</button>
+<button onclick="tirageSeance1()">Séance 1 : Groupes adaptatifs</button>
 <button onclick="tirageSeance2()">Séance 2 : Groupes puzzle</button>
 
 <canvas id="wheel" width="400" height="400"></canvas>
@@ -42,7 +42,7 @@ let groupesSeance1={};
 
 let startAngle=0,arc=0;
 
-// rôles séance 1
+// rôles
 const roles = [
 {nom:"Espion", img:"espion.png"},
 {nom:"Rapporteur", img:"rapporteur.png"},
@@ -129,108 +129,93 @@ if(!file)return alert("Choisir fichier");
 let r=new FileReader();
 r.onload=e=>{
 eleves=e.target.result.split("\n").map(x=>x.trim()).filter(x=>x);
-
-if(eleves.length>20){
-alert("Max 20 élèves");
-eleves=eleves.slice(0,20);
-}
-
 segments=[...eleves];
 drawWheel();
 };
 r.readAsText(file);
 }
 
-
 // =======================
-// 🧩 SÉANCE 1
+// 🧩 SÉANCE 1 ADAPTATIVE
 // =======================
 function tirageSeance1(){
 
 if(attribution.length===0)return alert("Tourne la roue");
 
-groupesSeance1={
-"01":[],
-"02":[],
-"03":[],
-"04":[]
-};
+let nbEleves = attribution.length;
+let nbGroupes = nbEleves > 20 ? 5 : 4;
 
+// rôles adaptés
+let rolesActifs = nbGroupes === 5
+? roles.filter(r => r.nom !== "Espion")
+: roles;
+
+// création groupes
+groupesSeance1 = {};
+
+for(let i=1;i<=nbGroupes;i++){
+let key = i.toString().padStart(2,"0");
+groupesSeance1[key] = [];
+}
+
+// répartition uniforme
 attribution.forEach((nom,index)=>{
 
-let g=Math.floor(index/5);
-if(g<4){
+let g = index % nbGroupes;
+let groupeKey = (g+1).toString().padStart(2,"0");
 
-let r=index%5;
+// rôle tournant
+let roleIndex = index % rolesActifs.length;
 
-groupesSeance1["0"+(g+1)].push({
+groupesSeance1[groupeKey].push({
 nom:nom,
-role:roles[r],
-roleIndex:r
+role:rolesActifs[roleIndex],
+roleIndex:roleIndex
 });
 
-}
 });
 
 afficherSeance1();
 }
 
-
 // =======================
-// 🎨 SÉANCE 2 (PUZZLE → EXPERT)
+// 🎨 SÉANCE 2
 // =======================
 function tirageSeance2(){
 
 if(Object.keys(groupesSeance1).length===0)
 return alert("Fais d'abord la séance 1");
 
-// fonction récupération
-function get(groupe, roleIndex){
-return groupesSeance1[groupe].find(e=>e.roleIndex===roleIndex);
+let couleurs = ["Rouge","Vert","Bleu","Orange","Violet"];
+
+let groupes = {};
+couleurs.forEach(c => groupes[c] = []);
+
+// récupérer tous les élèves
+let tous = [];
+
+Object.values(groupesSeance1).forEach(g=>{
+g.forEach(e=>{
+if(e) tous.push(e);
+});
+});
+
+// mélanger
+tous = shuffle(tous);
+
+// remplir groupes de 5
+let i=0;
+couleurs.forEach(c=>{
+for(let j=0;j<5;j++){
+if(tous[i]){
+groupes[c].push(tous[i]);
+i++;
 }
-
-let groupes={
-
-"Rouge":[
-get("01",0),
-get("02",1),
-get("03",2),
-get("04",4)
-],
-
-"Vert":[
-get("01",1),
-get("02",2),
-get("03",3),
-get("04",0)
-],
-
-"Bleu":[
-get("01",2),
-get("02",3),
-get("03",4),
-get("04",1)
-],
-
-"Orange":[
-get("01",3),
-get("02",4),
-get("03",0),
-get("04",2)
-],
-
-"Violet":[
-get("01",4),
-get("02",0),
-get("03",1),
-get("04",3)
-]
-
-};
+}
+});
 
 afficherSeance2(groupes);
 }
-
 
 // =======================
 // 🖼️ affichage séance 1
@@ -259,7 +244,6 @@ div.appendChild(c);
 
 });
 }
-
 
 // =======================
 // 🖼️ affichage séance 2
