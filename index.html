@@ -140,42 +140,58 @@ r.readAsText(file);
 // =======================
 function tirageSeance1(){
 
-if(attribution.length===0)return alert("Tourne la roue");
+  if(attribution.length===0) return alert("Tourne la roue");
 
-let nbEleves = attribution.length;
-let nbGroupes = nbEleves > 20 ? 5 : 4;
+  let nbEleves = attribution.length;
+  let nbGroupes = nbEleves > 20 ? 5 : 4;
 
-// rôles adaptés
-let rolesActifs = nbGroupes === 5
-? roles.filter(r => r.nom !== "Espion")
-: roles;
+  groupesSeance1 = {};
 
-// création groupes
-groupesSeance1 = {};
+  for(let i=1;i<=nbGroupes;i++){
+    let key = i.toString().padStart(2,"0");
+    groupesSeance1[key] = [];
+  }
 
-for(let i=1;i<=nbGroupes;i++){
-let key = i.toString().padStart(2,"0");
-groupesSeance1[key] = [];
-}
+  // répartir les élèves dans les groupes
+  let index = 0;
+  let groupesTemp = {};
+  for(let i=1;i<=nbGroupes;i++){
+    let key = i.toString().padStart(2,"0");
+    groupesTemp[key] = [];
+  }
 
-// répartition uniforme
-attribution.forEach((nom,index)=>{
+  attribution.forEach(nom => {
+    let g = (index % nbGroupes) + 1;
+    let key = g.toString().padStart(2,"0");
+    groupesTemp[key].push(nom);
+    index++;
+  });
 
-let g = index % nbGroupes;
-let groupeKey = (g+1).toString().padStart(2,"0");
+  // attribuer les rôles par groupe
+  Object.keys(groupesTemp).forEach(g => {
+    let elevesGroupe = groupesTemp[g];
+    let rolesDisponibles = [...roles];
 
-// rôle tournant
-let roleIndex = index % rolesActifs.length;
+    // si moins de 5 élèves, retirer Espion
+    if(elevesGroupe.length < 5){
+      rolesDisponibles = rolesDisponibles.filter(r => r.nom !== "Espion");
+    }
 
-groupesSeance1[groupeKey].push({
-nom:nom,
-role:rolesActifs[roleIndex],
-roleIndex:roleIndex
-});
+    // mélanger les rôles pour ne pas répéter
+    rolesDisponibles = shuffle(rolesDisponibles);
 
-});
+    elevesGroupe.forEach((nom,i) => {
+      // choisir un rôle unique si possible
+      let role = rolesDisponibles[i % rolesDisponibles.length];
+      groupesSeance1[g].push({
+        nom: nom,
+        role: role,
+        roleIndex: i
+      });
+    });
+  });
 
-afficherSeance1();
+  afficherSeance1();
 }
 
 // =======================
