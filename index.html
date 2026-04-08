@@ -203,20 +203,33 @@ if(e) tous.push(e);
 // mélanger
 tous = shuffle(tous);
 
-// remplir groupes de 5
-let i=0;
-couleurs.forEach(c=>{
-for(let j=0;j<5;j++){
-if(tous[i]){
-groupes[c].push(tous[i]);
-i++;
+let total = tous.length;
+let nbGroupes = couleurs.length;
+
+// taille minimale par groupe
+let base = Math.floor(total / nbGroupes);
+
+// nombre de groupes qui auront +1 élève
+let reste = total % nbGroupes;
+
+// distribution équilibrée
+let index = 0;
+
+couleurs.forEach((c, i)=>{
+
+let tailleGroupe = base + (i < reste ? 1 : 0);
+
+for(let j=0; j<tailleGroupe; j++){
+if(tous[index]){
+groupes[c].push(tous[index]);
+index++;
 }
 }
+
 });
 
 afficherSeance2(groupes);
 }
-
 // =======================
 // 🖼️ affichage séance 1
 // =======================
