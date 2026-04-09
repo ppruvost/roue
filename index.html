@@ -143,7 +143,23 @@ function tirageSeance1(){
   if(attribution.length===0) return alert("Tourne la roue");
 
   let nbEleves = attribution.length;
-  let nbGroupes = nbEleves > 20 ? 5 : 4;
+  let nbGroupes;
+
+  // =========================
+  // 🎯 GESTION ADAPTATIVE
+  // =========================
+
+  if(nbEleves <= 10){
+    // max 3 groupes avec min 3 élèves
+    nbGroupes = Math.min(3, Math.floor(nbEleves / 3));
+    if(nbGroupes < 1) nbGroupes = 1;
+  }
+  else if(nbEleves > 20){
+    nbGroupes = 5;
+  }
+  else{
+    nbGroupes = 4;
+  }
 
   groupesSeance1 = {};
 
@@ -152,13 +168,17 @@ function tirageSeance1(){
     groupesSeance1[key] = [];
   }
 
-  // répartir les élèves dans les groupes
-  let index = 0;
+  // =========================
+  // 🎯 RÉPARTITION ÉQUILIBRÉE
+  // =========================
+
   let groupesTemp = {};
   for(let i=1;i<=nbGroupes;i++){
     let key = i.toString().padStart(2,"0");
     groupesTemp[key] = [];
   }
+
+  let index = 0;
 
   attribution.forEach(nom => {
     let g = (index % nbGroupes) + 1;
@@ -167,33 +187,79 @@ function tirageSeance1(){
     index++;
   });
 
-  // attribuer les rôles par groupe
-  Object.keys(groupesTemp).forEach(g => {
-    let elevesGroupe = groupesTemp[g];
-    let rolesDisponibles = [...roles];
+// =========================
+// 🎯 ATTRIBUTION DES RÔLES AMÉLIORÉE
+// =========================
 
-    // si moins de 5 élèves, retirer Espion
-    if(elevesGroupe.length < 5){
-      rolesDisponibles = rolesDisponibles.filter(r => r.nom !== "Espion");
+Object.keys(groupesTemp).forEach(g => {
+
+  let elevesGroupe = groupesTemp[g];
+  let rolesDisponibles = [...roles];
+
+  // ❌ supprimer espion si petit groupe OU classe ≤10
+  if(elevesGroupe.length < 5 || nbEleves <= 10){
+    rolesDisponibles = rolesDisponibles.filter(r => r.nom !== "Espion");
+  }
+
+  // 🎯 rôles obligatoires
+  const rolesObligatoires = ["Rapporteur", "Médiateur"];
+
+  // récupérer les objets rôles
+  let obligatoires = rolesDisponibles.filter(r => rolesObligatoires.includes(r.nom));
+  let autresRoles = rolesDisponibles.filter(r => !rolesObligatoires.includes(r.nom));
+
+  // 🔀 mélanger
+  obligatoires = shuffle(obligatoires);
+  autresRoles = shuffle(autresRoles);
+
+  let rolesFinal = [];
+
+  // =========================
+  // 1️⃣ ajouter rôles obligatoires
+  // =========================
+  obligatoires.forEach(role => {
+    if(rolesFinal.length < elevesGroupe.length){
+      rolesFinal.push(role);
     }
-
-    // mélanger les rôles pour ne pas répéter
-    rolesDisponibles = shuffle(rolesDisponibles);
-
-    elevesGroupe.forEach((nom,i) => {
-      // choisir un rôle unique si possible
-      let role = rolesDisponibles[i % rolesDisponibles.length];
-      groupesSeance1[g].push({
-        nom: nom,
-        role: role,
-        roleIndex: i
-      });
-    });
   });
 
-  afficherSeance1();
-}
+  // =========================
+  // 2️⃣ compléter sans doublon
+  // =========================
+  autresRoles.forEach(role => {
+    if(rolesFinal.length < elevesGroupe.length){
+      rolesFinal.push(role);
+    }
+  });
 
+  // =========================
+  // 3️⃣ fallback si pas assez de rôles
+  // =========================
+  let i = 0;
+  while(rolesFinal.length < elevesGroupe.length){
+    rolesFinal.push(autresRoles[i % autresRoles.length]);
+    i++;
+  }
+
+  // 🔀 mélanger la distribution finale
+  rolesFinal = shuffle(rolesFinal);
+
+  // =========================
+  // 4️⃣ attribution aux élèves
+  // =========================
+  elevesGroupe.forEach((nom,i) => {
+
+    groupesSeance1[g].push({
+      nom: nom,
+      role: rolesFinal[i],
+      roleIndex: i
+    });
+
+  });
+
+});
+
+afficherSeance1();
 // =======================
 // 🎨 SÉANCE 2
 // =======================
