@@ -269,10 +269,7 @@ function tirageSeance2(){
 if(Object.keys(groupesSeance1).length===0)
 return alert("Fais d'abord la séance 1");
 
-let couleurs = ["Rouge","Vert","Bleu","Orange","Violet"];
-
-let groupes = {};
-couleurs.forEach(c => groupes[c] = []);
+let couleursBase = ["Rouge","Vert","Bleu","Orange","Violet"];
 
 // récupérer tous les élèves
 let tous = [];
@@ -287,15 +284,37 @@ if(e) tous.push(e);
 tous = shuffle(tous);
 
 let total = tous.length;
-let nbGroupes = couleurs.length;
 
-// taille minimale par groupe
+// =========================
+// 🎯 ADAPTATION PETITS EFFECTIFS
+// =========================
+
+// nombre max de groupes possibles avec min 3 élèves
+let nbGroupesMax = Math.floor(total / 3);
+
+// limite à 5 groupes (comme ton système initial)
+let nbGroupes = Math.min(couleursBase.length, nbGroupesMax);
+
+// sécurité minimum
+if(nbGroupes < 1) nbGroupes = 1;
+
+// adapter les couleurs utilisées
+let couleurs = couleursBase.slice(0, nbGroupes);
+
+// =========================
+// 🎯 CRÉATION DES GROUPES
+// =========================
+
+let groupes = {};
+couleurs.forEach(c => groupes[c] = []);
+
+// =========================
+// 🎯 RÉPARTITION ÉQUILIBRÉE
+// =========================
+
 let base = Math.floor(total / nbGroupes);
-
-// nombre de groupes qui auront +1 élève
 let reste = total % nbGroupes;
 
-// distribution équilibrée
 let index = 0;
 
 couleurs.forEach((c, i)=>{
