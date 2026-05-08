@@ -157,197 +157,173 @@ r.readAsText(file);
 // =======================
 function tirageSeance1(){
 
-  if(attribution.length===0) return alert("Tourne la roue");
+  if(attribution.length===0)
+    return alert("Tourne la roue");
 
   let nbEleves = attribution.length;
-  let nbGroupes;
 
-  // =========================
-  // 🎯 GESTION ADAPTATIVE
-  // =========================
+  // noms des groupes
+  const nomsGroupes = ["A","B","C","D","E"];
 
-  if(nbEleves <= 10){
-    // max 3 groupes avec min 3 élèves
-    nbGroupes = Math.min(3, Math.floor(nbEleves / 3));
-    if(nbGroupes < 1) nbGroupes = 1;
-  }
-  else if(nbEleves > 20){
-    nbGroupes = 5;
+  let tailles = [];
+
+  // CAS SPÉCIAL : 17 élèves → 5/4/4/4
+  if(nbEleves === 17){
+    tailles = [5,4,4,4];
   }
   else{
-    nbGroupes = 4;
+    // répartition équilibrée classique
+    let nbGroupes;
+
+    if(nbEleves <= 10){
+      nbGroupes = Math.min(3, Math.floor(nbEleves / 3));
+      if(nbGroupes < 1) nbGroupes = 1;
+    }
+    else if(nbEleves > 20){
+      nbGroupes = 5;
+    }
+    else{
+      nbGroupes = 4;
+    }
+
+    let base = Math.floor(nbEleves / nbGroupes);
+    let reste = nbEleves % nbGroupes;
+
+    for(let i=0;i<nbGroupes;i++){
+      tailles.push(base + (i < reste ? 1 : 0));
+    }
   }
 
   groupesSeance1 = {};
 
-  for(let i=1;i<=nbGroupes;i++){
-    let key = i.toString().padStart(2,"0");
-    groupesSeance1[key] = [];
-  }
+  // création des groupes
+  tailles.forEach((taille, i)=>{
+    let nom = nomsGroupes[i];
+    groupesSeance1[nom] = [];
+  });
 
-  // =========================
-  // 🎯 RÉPARTITION ÉQUILIBRÉE
-  // =========================
-
-  let groupesTemp = {};
-  for(let i=1;i<=nbGroupes;i++){
-    let key = i.toString().padStart(2,"0");
-    groupesTemp[key] = [];
-  }
-
+  // attribution des élèves
   let index = 0;
 
-  attribution.forEach(nom => {
-    let g = (index % nbGroupes) + 1;
-    let key = g.toString().padStart(2,"0");
-    groupesTemp[key].push(nom);
-    index++;
-  });
+  Object.keys(groupesSeance1).forEach((g, i)=>{
 
-// =========================
-// 🎯 ATTRIBUTION DES RÔLES AMÉLIORÉE
-// =========================
+    let elevesGroupe = attribution.slice(index, index + tailles[i]);
+    index += tailles[i];
 
-Object.keys(groupesTemp).forEach(g => {
+    let rolesDisponibles = [...roles];
 
-  let elevesGroupe = groupesTemp[g];
-  let rolesDisponibles = [...roles];
-
-  // ❌ supprimer espion si petit groupe OU classe ≤10
-  if(elevesGroupe.length < 5 || nbEleves <= 10){
-    rolesDisponibles = rolesDisponibles.filter(r => r.nom !== "Espion");
-  }
-
-  // 🎯 rôles obligatoires
-  const rolesObligatoires = ["Rapporteur", "Médiateur"];
-
-  // récupérer les objets rôles
-  let obligatoires = rolesDisponibles.filter(r => rolesObligatoires.includes(r.nom));
-  let autresRoles = rolesDisponibles.filter(r => !rolesObligatoires.includes(r.nom));
-
-  // 🔀 mélanger
-  obligatoires = shuffle(obligatoires);
-  autresRoles = shuffle(autresRoles);
-
-  let rolesFinal = [];
-
-  // =========================
-  // 1️⃣ ajouter rôles obligatoires
-  // =========================
-  obligatoires.forEach(role => {
-    if(rolesFinal.length < elevesGroupe.length){
-      rolesFinal.push(role);
+    // retirer espion si groupe < 5
+    if(elevesGroupe.length < 5){
+      rolesDisponibles = rolesDisponibles.filter(r => r.nom !== "Espion");
     }
-  });
 
-  // =========================
-  // 2️⃣ compléter sans doublon
-  // =========================
-  autresRoles.forEach(role => {
-    if(rolesFinal.length < elevesGroupe.length){
-      rolesFinal.push(role);
+    const rolesObligatoires = ["Rapporteur", "Médiateur"];
+
+    let obligatoires = rolesDisponibles.filter(r =>
+      rolesObligatoires.includes(r.nom)
+    );
+
+    let autresRoles = rolesDisponibles.filter(r =>
+      !rolesObligatoires.includes(r.nom)
+    );
+
+    obligatoires = shuffle(obligatoires);
+    autresRoles = shuffle(autresRoles);
+
+    let rolesFinal = [];
+
+    obligatoires.forEach(role=>{
+      if(rolesFinal.length < elevesGroupe.length){
+        rolesFinal.push(role);
+      }
+    });
+
+    autresRoles.forEach(role=>{
+      if(rolesFinal.length < elevesGroupe.length){
+        rolesFinal.push(role);
+      }
+    });
+
+    let j = 0;
+    while(rolesFinal.length < elevesGroupe.length){
+      rolesFinal.push(autresRoles[j % autresRoles.length]);
+      j++;
     }
-  });
 
-  // =========================
-  // 3️⃣ fallback si pas assez de rôles
-  // =========================
-  let i = 0;
-  while(rolesFinal.length < elevesGroupe.length){
-    rolesFinal.push(autresRoles[i % autresRoles.length]);
-    i++;
-  }
+    rolesFinal = shuffle(rolesFinal);
 
-  // 🔀 mélanger la distribution finale
-  rolesFinal = shuffle(rolesFinal);
-
-  // =========================
-  // 4️⃣ attribution aux élèves
-  // =========================
-  elevesGroupe.forEach((nom,i) => {
-
-    groupesSeance1[g].push({
-      nom: nom,
-      role: rolesFinal[i],
-      roleIndex: i
+    elevesGroupe.forEach((nom, k)=>{
+      groupesSeance1[g].push({
+        nom: nom,
+        role: rolesFinal[k],
+        roleIndex: k
+      });
     });
 
   });
 
-});
-
-afficherSeance1();
+  afficherSeance1();
 }
 // =======================
 // 🎨 SÉANCE 2
 // =======================
 function tirageSeance2(){
 
-if(Object.keys(groupesSeance1).length===0)
-return alert("Fais d'abord la séance 1");
+  if(Object.keys(groupesSeance1).length===0)
+    return alert("Fais d'abord la séance 1");
 
-let couleursBase = ["Rouge","Vert","Bleu","Orange","Violet"];
+  const couleursBase = [
+    "Jaune",
+    "Vert",
+    "Orange",
+    "Rouge",
+    "Violet",
+    "Bleu"
+  ];
 
-// récupérer tous les élèves
-let tous = [];
+  let tous = [];
 
-Object.values(groupesSeance1).forEach(g=>{
-g.forEach(e=>{
-if(e) tous.push(e);
-});
-});
+  Object.values(groupesSeance1).forEach(g=>{
+    g.forEach(e=>{
+      if(e) tous.push(e);
+    });
+  });
 
-// mélanger
-tous = shuffle(tous);
+  tous = shuffle(tous);
 
-let total = tous.length;
+  let total = tous.length;
 
-// =========================
-// 🎯 ADAPTATION PETITS EFFECTIFS
-// =========================
+  // minimum 3 élèves par groupe
+  let nbGroupesMax = Math.floor(total / 3);
 
-// nombre max de groupes possibles avec min 3 élèves
-let nbGroupesMax = Math.floor(total / 3);
+  let nbGroupes = Math.min(couleursBase.length, nbGroupesMax);
 
-// limite à 5 groupes (comme ton système initial)
-let nbGroupes = Math.min(couleursBase.length, nbGroupesMax);
+  if(nbGroupes < 1) nbGroupes = 1;
 
-// sécurité minimum
-if(nbGroupes < 1) nbGroupes = 1;
+  let couleurs = couleursBase.slice(0, nbGroupes);
 
-// adapter les couleurs utilisées
-let couleurs = couleursBase.slice(0, nbGroupes);
+  let groupes = {};
+  couleurs.forEach(c => groupes[c] = []);
 
-// =========================
-// 🎯 CRÉATION DES GROUPES
-// =========================
+  let base = Math.floor(total / nbGroupes);
+  let reste = total % nbGroupes;
 
-let groupes = {};
-couleurs.forEach(c => groupes[c] = []);
+  let index = 0;
 
-// =========================
-// 🎯 RÉPARTITION ÉQUILIBRÉE
-// =========================
+  couleurs.forEach((c, i)=>{
 
-let base = Math.floor(total / nbGroupes);
-let reste = total % nbGroupes;
+    let tailleGroupe = base + (i < reste ? 1 : 0);
 
-let index = 0;
+    for(let j=0; j<tailleGroupe; j++){
+      if(tous[index]){
+        groupes[c].push(tous[index]);
+        index++;
+      }
+    }
 
-couleurs.forEach((c, i)=>{
+  });
 
-let tailleGroupe = base + (i < reste ? 1 : 0);
-
-for(let j=0; j<tailleGroupe; j++){
-if(tous[index]){
-groupes[c].push(tous[index]);
-index++;
-}
-}
-
-});
-
-afficherSeance2(groupes);
+  afficherSeance2(groupes);
 }
 // =======================
 // 🖼️ affichage séance 1
