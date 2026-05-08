@@ -157,7 +157,7 @@ r.readAsText(file);
 // =======================
 function tirageSeance1(){
 
-  if(attribution.length===0)
+  if(attribution.length === 0)
     return alert("Tourne la roue");
 
   let nbEleves = attribution.length;
@@ -165,14 +165,23 @@ function tirageSeance1(){
   // noms des groupes
   const nomsGroupes = ["A","B","C","D","E"];
 
+  // reset
+  groupesSeance1 = {};
+
   let tailles = [];
 
-  // CAS SPÉCIAL : 17 élèves → 5/4/4/4
+  // =====================================
+  // CAS SPÉCIAL : 17 élèves → 5 / 4 / 4 / 4
+  // =====================================
   if(nbEleves === 17){
     tailles = [5,4,4,4];
   }
+
+  // =====================================
+  // AUTRES CAS
+  // =====================================
   else{
-    // répartition équilibrée classique
+
     let nbGroupes;
 
     if(nbEleves <= 10){
@@ -189,34 +198,45 @@ function tirageSeance1(){
     let base = Math.floor(nbEleves / nbGroupes);
     let reste = nbEleves % nbGroupes;
 
-    for(let i=0;i<nbGroupes;i++){
+    for(let i = 0; i < nbGroupes; i++){
       tailles.push(base + (i < reste ? 1 : 0));
     }
   }
 
-  groupesSeance1 = {};
-
-  // création des groupes
+  // =====================================
+  // CRÉATION DES GROUPES
+  // =====================================
   tailles.forEach((taille, i)=>{
     let nom = nomsGroupes[i];
     groupesSeance1[nom] = [];
   });
 
-  // attribution des élèves
+  // =====================================
+  // DISTRIBUTION EXACTE DES ÉLÈVES
+  // =====================================
   let index = 0;
 
-  Object.keys(groupesSeance1).forEach((g, i)=>{
+  tailles.forEach((taille, i)=>{
 
-    let elevesGroupe = attribution.slice(index, index + tailles[i]);
-    index += tailles[i];
+    let nomGroupe = nomsGroupes[i];
+
+    // IMPORTANT :
+    // slice(index, index + taille)
+    // garantit bien 5 / 4 / 4 / 4
+    let elevesGroupe = attribution.slice(index, index + taille);
+
+    index += taille;
 
     let rolesDisponibles = [...roles];
 
     // retirer espion si groupe < 5
     if(elevesGroupe.length < 5){
-      rolesDisponibles = rolesDisponibles.filter(r => r.nom !== "Espion");
+      rolesDisponibles = rolesDisponibles.filter(
+        r => r.nom !== "Espion"
+      );
     }
 
+    // rôles obligatoires
     const rolesObligatoires = ["Rapporteur", "Médiateur"];
 
     let obligatoires = rolesDisponibles.filter(r =>
@@ -232,32 +252,41 @@ function tirageSeance1(){
 
     let rolesFinal = [];
 
+    // 1. rôles obligatoires
     obligatoires.forEach(role=>{
       if(rolesFinal.length < elevesGroupe.length){
         rolesFinal.push(role);
       }
     });
 
+    // 2. compléter sans doublon
     autresRoles.forEach(role=>{
       if(rolesFinal.length < elevesGroupe.length){
         rolesFinal.push(role);
       }
     });
 
+    // 3. sécurité si besoin
     let j = 0;
     while(rolesFinal.length < elevesGroupe.length){
-      rolesFinal.push(autresRoles[j % autresRoles.length]);
+      rolesFinal.push(
+        autresRoles[j % autresRoles.length]
+      );
       j++;
     }
 
+    // 4. mélange final
     rolesFinal = shuffle(rolesFinal);
 
+    // 5. attribution aux élèves
     elevesGroupe.forEach((nom, k)=>{
-      groupesSeance1[g].push({
+
+      groupesSeance1[nomGroupe].push({
         nom: nom,
         role: rolesFinal[k],
         roleIndex: k
       });
+
     });
 
   });
